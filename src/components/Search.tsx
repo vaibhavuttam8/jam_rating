@@ -1,14 +1,23 @@
-// src/Search.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { CurrentlyPlaying } from './CurrentTracks';
-export const Search = () => {
+import CurrentlyPlaying from './CurrentTracks';
+
+export const Search: React.FC = () => {
     const [searchKey, setSearchKey] = useState('');
-    const [artists, setArtists] = useState([]);
+    const [artists, setArtists] = useState<any[]>([]);
+    const [token, setToken] = useState<string | null>(null);
+
+    useEffect(() => {
+        const storedToken = window.localStorage.getItem('token');
+        if (storedToken) {
+            setToken(storedToken);
+        } else {
+            alert('Please log in first');
+        }
+    }, []);
 
     const searchArtists = async (e: React.FormEvent) => {
         e.preventDefault();
-        const token = window.localStorage.getItem('token');
 
         if (!token) {
             alert('Please log in first');
@@ -53,8 +62,9 @@ export const Search = () => {
                     </div>
                 ))}
             </div>
-            <CurrentlyPlaying />
+            {token && <CurrentlyPlaying token={token} />}
         </div>
     );
 };
 
+export default Search;

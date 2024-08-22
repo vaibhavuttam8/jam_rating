@@ -1,59 +1,41 @@
-import React, { useEffect, useState } from 'react';
-import SpotifyService from '../services/SpotifyServices'; // Adjust the import path as necessary
+import React, { useState, useEffect } from 'react';
+import { setAccessToken, getCurrentlyPlayingTrack } from '../services/SpotifyServices';
 
-interface Track {
-    name: string;
-    artists: { name: string }[];
-    album: { images: { url: string }[] };
+interface CurrentlyPlayingProps {
+  token: string;
 }
 
-export const CurrentlyPlaying = () => {
-    const [track, setTrack] = useState<Track | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [spotifyService, setSpotifyService] = useState<SpotifyService | null>(null);
+interface Track {
+  name: string;
+  artists: { name: string }[];
+}
 
-    useEffect(() => {
-        const token = window.localStorage.getItem('token');
+const CurrentlyPlaying: React.FC<CurrentlyPlayingProps> = ({ token }) => {
+  const [track, setTrack] = useState<Track | null>(null);
 
-        if (token) {
-            setSpotifyService(new SpotifyService(token));
-        } else {
-            setError('No access token found');
-        }
-    }, []);
+  useEffect(() => {
+    setAccessToken(token);
 
-    useEffect(() => {
-        const fetchCurrentlyPlaying = async () => {
-            if (!spotifyService) return;
+    const fetchCurrentlyPlayingTrack = async () => {
+      const currentTrack = await getCurrentlyPlayingTrack();
+      setTrack(currentTrack as Track | null);
+    };
 
-            try {
-                const data = await spotifyService.getCurrentlyPlayingSong();
-                if (data && data.item) {
-                    setTrack(data.item);
-                } else {
-                    setTrack(null);
-                }
-            } catch (err) {
-                setError('Failed to fetch currently playing track');
-            }
-        };
+    fetchCurrentlyPlayingTrack();
+  }, [token]);
 
-        fetchCurrentlyPlaying();
-    }, [spotifyService]);
-
-    if (error) {
-        return <div>{error}</div>;
-    }
-
-    if (!track) {
-        return <div>No track is currently playing.</div>;
-    }
-
-    return (
+  return (
+    <div>
+      {track ? (
         <div>
-            <h3>Currently Playing:</h3>
-            <p><strong>{track.name}</strong> by {track.artists.map(artist => artist.name).join(', ')}</p>
-            {track.album.images.length > 0 && <img src={track.album.images[0].url} alt="Album cover" width="200" />}
+          <h3>Currently Playing:</h3>
+          <p>{track.name} by {track.artists.map(artist => artist.name).join(', ')}</p>
         </div>
-    );
+      ) : (
+        <p>No track currently playing</p>
+      )}
+    </div>
+  );
 };
+
+export default CurrentlyPlaying;
